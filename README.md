@@ -5,7 +5,9 @@ A Motion Analysis Bridge to ROS
 
 **Overview:** This is a ROS package that was built to act as a linux interface for Motion Analysis' motion capture system an Cortex application. The ROS package communicates with the Cortex application over the network to get motion capture data and then publishes the data. The system, data publishers, and services offered by this ROS package are explained below.
 
-**Modifed outdated references and successfully executed "catkin_make". --22.04.13 by mych907**
+**Modifed outdated references and successfully executed "catkin_make" with Ubuntu 18.04, ROS Melodic. --22.04.13 by mych907**
+
+Plan: Will be tested with Cortex 2.5.
 
 # Requirements
 
