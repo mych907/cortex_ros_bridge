@@ -21,7 +21,7 @@
 
 void MyErrorMsgHandler ( int iLevel, const char *szMsg );
 void InitializeCortexHandlers();
-int InitializeCortexConnection( char local[], char cortex[] );
+int InitializeCortexConnection( const char local[], const char cortex[] );
 void GetCortexFrameRate();
 int GetKnownBodies ( char** &bodies );
 int FindBodyFrameIndex ( sFrameOfData* FrameOfData, const char* body );

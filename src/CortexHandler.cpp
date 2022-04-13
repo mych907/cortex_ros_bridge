@@ -106,7 +106,7 @@ void InitializeCortexHandlers()
   Cortex_SetErrorMsgHandlerFunc(MyErrorMsgHandler);
 }
 
-int InitializeCortexConnection( char local[], char cortex[] )
+int InitializeCortexConnection( const char local[], const char cortex[] )
 {
 	if( Cortex_Initialize(local, cortex) != RC_Okay )
 	{

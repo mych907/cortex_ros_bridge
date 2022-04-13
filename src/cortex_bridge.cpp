@@ -40,6 +40,11 @@
 #include <sstream>
 #include <time.h>
 
+// Added by Minyoung
+#include <algorithm>
+#include <utility>
+#include <string>
+
 // toggle this define to publish "cortex_bridge/Markers" instead of viz markers
 #define PUBLISH_VISUALIZATION_MARKERS 1
 
@@ -91,7 +96,8 @@ int main(int argc, char* argv[])
 	ros::Rate loop_rate(150);	
 
 	// Initialize cortex connection
-	if ( InitializeCortexConnection ( myIP.c_str(), cortexIP.c_str() ) != 0 )
+	if ( InitializeCortexConnection ( myIP.c_str(), cortexIP.c_str() ) != 0 ) // Originial
+//	if ( InitializeCortexConnection ( myIP, cortexIP ) != 0 )
 	{
 		ROS_INFO ( "Error: Unable to initialize ethernet communication" );
 		return -1;
