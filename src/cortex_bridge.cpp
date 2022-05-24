@@ -46,7 +46,7 @@
 #include <string>
 
 // toggle this define to publish "cortex_bridge/Markers" instead of viz markers
-#define PUBLISH_VISUALIZATION_MARKERS 1
+#define PUBLISH_VISUALIZATION_MARKERS 0
 
 // Globals
 tf::TransformBroadcaster *Cortex_broadcaster;
@@ -97,7 +97,6 @@ int main(int argc, char* argv[])
 
 	// Initialize cortex connection
 	if ( InitializeCortexConnection ( myIP.c_str(), cortexIP.c_str() ) != 0 ) // Originial
-//	if ( InitializeCortexConnection ( myIP, cortexIP ) != 0 )
 	{
 		ROS_INFO ( "Error: Unable to initialize ethernet communication" );
 		return -1;
@@ -105,6 +104,7 @@ int main(int argc, char* argv[])
 
 	// get all the possible bodies to track
 	NumBodiesOfInterest = GetKnownBodies ( bodyOfInterest );
+        printf("\nNumBodies : %i\n\n", NumBodiesOfInterest);
 	if ( NumBodiesOfInterest < 0 )
 	{
 		// clean up cortex connection
@@ -230,9 +230,11 @@ bool setOriginCallback ( cortex_bridge::cortexSetOrigin::Request& req, cortex_br
 /////////////////////////////////////////////////////////////////////////////////
 void newFrameCallback(sFrameOfData* FrameOfData)
 {
+        printf("Callback!\n");
 	// publish body transforms for all interesting bodies
 	std::tuple<bool,tf::StampedTransform> transform;
 	int fIndex;
+        printf("NumBodiesOfInterest is %d\n", NumBodiesOfInterest);
 	for ( int i = 0; i < NumBodiesOfInterest; ++i )
 	{
 		fIndex = FindBodyFrameIndex ( FrameOfData, bodyOfInterest[i] );

@@ -49,6 +49,7 @@ int GetKnownBodies ( char** &bodies )
   sBodyDefs* pBodyDefs = NULL;
   pBodyDefs = Cortex_GetBodyDefs();
 
+
   // No body definitions
   if (pBodyDefs == NULL) 
   {
@@ -102,8 +103,7 @@ void InitializeCortexHandlers()
   Cortex_SetVerbosityLevel(VL_Error);
   Cortex_GetSdkVersion(SDK_Version);
   ROS_INFO ("Using SDK Version %d.%d.%d.%d", SDK_Version[0], SDK_Version[1], SDK_Version[2], SDK_Version[3]);
-
-  Cortex_SetErrorMsgHandlerFunc(MyErrorMsgHandler);
+  //Cortex_SetErrorMsgHandlerFunc(MyErrorMsgHandler);
 }
 
 int InitializeCortexConnection( const char local[], const char cortex[] )
@@ -111,6 +111,7 @@ int InitializeCortexConnection( const char local[], const char cortex[] )
 	if( Cortex_Initialize(local, cortex) != RC_Okay )
 	{
 		Cortex_Exit();
+                printf("local = %s, cortex = %s\n",local,cortex);
 		return -1;
 	}
 	ROS_INFO ( "Cortex Connection Initialized" );
