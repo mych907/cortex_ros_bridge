@@ -1,9 +1,21 @@
 # cortex_ros_bridge
 A Motion Analysis Bridge to ROS
 
+
+
 **Compatibility:** Has been tested with Ubuntu 14.04, ROS Indigo, and Cortex 5.5.
 
 **Overview:** This is a ROS package that was built to act as a linux interface for Motion Analysis' motion capture system an Cortex application. The ROS package communicates with the Cortex application over the network to get motion capture data and then publishes the data. The system, data publishers, and services offered by this ROS package are explained below.
+
+
+# Update by mych907
+
+22.04.13 - Modifed outdated references and successfully executed "catkin_make" with Ubuntu 18.04, ROS Melodic.
+
+22.05.24 - Established connection with a Windows PC running Cortex. Able to bring marker information, but multicast not established yet.
+
+22.05.31 - Established complete connection between Windows 11 running Cortex. Refer to https://gite.lirmm.fr/ashesh/cortex_bridge. Publisher for MAVROS added.
+
 
 # Requirements
 
