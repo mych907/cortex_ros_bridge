@@ -57,20 +57,15 @@ int main(int argc, char* argv[])
   Cortex_SetDataHandlerFunc(MyDataHandler);
 
   printf("****** Cortex_Initialize ******\n");
-//  printf("argc %d", argc);
   if (argc == 1) {
-    printf("do");
     retval = Cortex_Initialize("", NULL);
   } else if (argc == 2) {
-//    printf("dodo");
     retval = Cortex_Initialize(argv[1], NULL);
   } else if (argc == 3) {
-//    printf("dododo");
     retval = Cortex_Initialize(argv[1], argv[2]);
   }
 
   if (retval != RC_Okay) {
-    printf("do?");
     printf("Error: Unable to initialize ethernet communication\n");
     retval = Cortex_Exit();
     return 1;

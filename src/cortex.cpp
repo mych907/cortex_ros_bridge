@@ -34,7 +34,8 @@
 #include "cortex_unpack.h"
 //#include "cmetered.h"
 
-const unsigned char MyVersionNumber[4] = { 2, 6, 8, 2}; // ProgramID, Major, Minor, Bugfix
+const unsigned char MyVersionNumber[4] = { 2, 5, 3, 1 }; // ProgramID, Major, Minor, Bugfix
+
 
 LOCAL int bInitialized = 0;
 LOCAL sHostInfo HostInfo;
@@ -60,35 +61,43 @@ LOCAL unsigned short wMultiCastPort = 1025; // Cortex sends frames to this port 
 //LOCAL  in_addr MyNicCardAddress={ 10,  1,  2,199};   // My local IP address
 //LOCAL  in_addr MultiCastAddress={225,  1,  1,  1};   // Cortex sends frames to this address and associated port
 
-
-
-// Original codes
-//LOCAL in_addr MyNicCardAddress = { (10 << 24) + (1 << 16) + (2 << 8) + 199 }; // My local IP address
-//LOCAL in_addr MultiCastAddress = { (225 << 24) + (1 << 16) + (1 << 8) + 1 }; // Cortex sends frames to this address and associated port
+// LOCAL in_addr MyNicCardAddress = { (10 << 24) + (1 << 16) + (2 << 8) + 199 }; // My local IP address
+// LOCAL in_addr MultiCastAddress = { (225 << 24) + (1 << 16) + (1 << 8) + 1 }; // Cortex sends frames to this address and associated port
 
 //LOCAL  in_addr CortexNicCardAddress={0,0,0,0};
-//LOCAL  in_addr CortexNicCardAddress={4294967041};
-//LOCAL in_addr CortexNicCardAddress = { (255 << 24) + (255 << 16) + (255 << 8) + 1 };
+//LOCAL  in_addr CortexNicCardAddress={255,255,255,255};
 
-// MY
-//LOCAL in_addr MyNicCardAddress = {10101001|11111110|1|10100110}; // My local IP address
-//LOCAL in_addr MyNicCardAddress = {0};
-//LOCAL in_addr MultiCastAddress = {10101001|11111110|1|10100111}; // Cortex sends frames to this address and associated port
-LOCAL in_addr MultiCastAddress = {11100001|1|1|1}; // Cortex sends frames to this address and associated port
-//LOCAL in_addr MultiCastAddress = {0};
+//LOCAL in_addr CortexNicCardAddress = { (255 << 24) + (255 << 16) + (255 << 8) + 255 };
 
 
-//Try this!
-LOCAL in_addr MyNicCardAddress = {11000000|10101000|0|100}; // My local IP address
-LOCAL in_addr CortexNicCardAddress = {11000000|10101000|0|101};
+/* /////////////////////////////  Ashesh addresses ///////////////////////// */
 
-//Original
+
+//LOCAL in_addr MyNicCardAddress = { (192 << 24)  + (168 << 16)   + (0 << 8)   + 4 }; // My local IP address
+
+//LOCAL in_addr MultiCastAddress = {  3774939393 };//{ (225 << 24) + (1<< 16) + (1 << 8) + 1 }; // Cortex sends frames to this address and associated port
+
+// // convert IP address to integer;
+//http://www.aboutmyip.com/AboutMyXApp/IP2Integer.jsp?ipAddress=255.255.255.1
+
+//LOCAL in_addr CortexNicCardAddress = { (192 << 24) + (168 << 16) + (0 << 8) + 5 };
+
+/* /////////////////////////////  MY addresses ///////////////////////// */
+
+
+LOCAL in_addr MyNicCardAddress = { (10 << 24)  + (1 << 16)   + (1 << 8)   + 180 }; // My local IP address
+
+LOCAL in_addr MultiCastAddress = {  3774939393 };//{ (225 << 24) + (1<< 16) + (1 << 8) + 1 }; // Cortex sends frames to this address and associated port
+
+// // convert IP address to integer;
+//http://www.aboutmyip.com/AboutMyXApp/IP2Integer.jsp?ipAddress=255.255.255.1
+
+LOCAL in_addr CortexNicCardAddress = { (10 << 24) + (1 << 16) + (1 << 8) + 190 };
+
+/* /////////////////////////////  my addresses ///////////////////////// */
+
+
 LOCAL sockaddr_in CortexAddr; // This gets filled out when Cortex replies.
-
-// MY
-//LOCAL in_addr CortexNicCardAddress = {11111111|11111111|11111111|0};
-//LOCAL in_addr CortexNicCardAddress = {10101001|11111110|1|10100111};
-//LOCAL in_addr CortexNicCardAddress = {0};
 
 
 LOCAL SOCKET CommandSocket = -1;
@@ -533,6 +542,7 @@ int Cortex_Initialize(const char* szMyNicCardAddress,
     LogMessage(VL_Error, "This machine has no ethernet interfaces");
     return RC_NetworkError;
   }
+
   if (szMyNicCardAddress == NULL || szMyNicCardAddress[0] == 0) {
     if (nAddresses > 1) {
       LogMessage(
@@ -540,7 +550,6 @@ int Cortex_Initialize(const char* szMyNicCardAddress,
                  "The local machine has more than one ethernet interface.  Using the first one found.");
     }
     MyNicCardAddress = MyAddresses[0];
-    int count_inet = 0;
 
     LogMessage(VL_Info, "Initializing using my default ethernet address: %s",
                inet_ntoa(MyNicCardAddress));
@@ -557,7 +566,7 @@ int Cortex_Initialize(const char* szMyNicCardAddress,
                inet_ntoa(MyNicCardAddress));
   }
 
-  if (ConvertToIPAddress2(szCortexNicCardAddress, &CortexNicCardAddress) != OK) {
+  if (ConvertToIPAddress(szCortexNicCardAddress, &CortexNicCardAddress) != OK) {
     LogMessage(VL_Error, "Unable to convert \"%s\" to IP Address for Cortex",
                szCortexNicCardAddress);
     return RC_NetworkError;
@@ -591,7 +600,7 @@ int Cortex_Initialize(const char* szMyNicCardAddress,
   PacketOut.iCommand = PKT2_HELLO_WORLD;
   PacketOut.nBytes = sizeof(sMe);
   strcpy(PacketOut.Data.Me.szName, "ClientTest");
-  memcpy(PacketOut.Data.Me.Version, MyVersionNumber, 2);
+  memcpy(PacketOut.Data.Me.Version, MyVersionNumber, 4);
 
   //Broadcast(&PacketOut);
 
@@ -691,7 +700,7 @@ int Cortex_Exit()
  */
 sBodyDefs* Cortex_GetBodyDefs()
 {
-  int nTries = 30;
+  int nTries = 3;
 
   PacketOut.iCommand = PKT2_REQUEST_BODYDEFS;
   PacketOut.nBytes = 0;
@@ -714,10 +723,8 @@ sBodyDefs* Cortex_GetBodyDefs()
       int retCode = sem_trywait(&EH_CommandConfirmed);
       if (!retCode) {
 
-
         /* Event is signaled */
         return pNewBodyDefs;
-
 
       } else {
 
@@ -816,7 +823,7 @@ int Cortex_Request(const char* szCommand, void** Response, int *pnBytes)
 {
   const char* FRAME_QUERY = "GetFrameOfData";
 
-  int nTries = 3;
+  int nTries = 10;
   int expectingFrame = 0;
 
   *pnBytes = 0;
@@ -1185,7 +1192,6 @@ LOCAL void GetHostName_ASYNC()
   int status = pthread_create(&GetHostNameThread_ID, NULL,
                               GetHostByAddrThread_Func, (void*) &HostInfo);
   if (status != 0) {
-    printf("Do I get error?");
     LogMessage(VL_Error,
                "pthread_create error starting GetHostByAddrThread_Func thread");
   }

@@ -1,16 +1,13 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(cortex_bridge)
 
+
 # Add support for C++ 11
 include(CheckCXXCompilerFlag)
 CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
 CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
-CHECK_CXX_COMPILER_FLAG("-std=c++98" COMPILER_SUPPORTS_CXX98)
-
 if(COMPILER_SUPPORTS_CXX11)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
-elseif(COMPILER_SUPPORTS_CXX98)
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++98")
 elseif(COMPILER_SUPPORTS_CXX0X)
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
 else()
@@ -18,10 +15,10 @@ else()
 endif()
 
 ## Find catkin and any catkin packages
-find_package ( catkin REQUIRED COMPONENTS 
-								roscpp 
-								message_generation 
-								geometry_msgs 
+find_package ( catkin REQUIRED COMPONENTS
+								roscpp
+								message_generation
+								geometry_msgs
 								tf
 )
 
@@ -37,7 +34,9 @@ add_service_files ( FILES
 )
 
 ## Generate added messages and services
-generate_messages(DEPENDENCIES geometry_msgs)
+generate_messages(DEPENDENCIES geometry_msgs
+								std_msgs
+)
 
 ## Declare a catkin package
 catkin_package(CATKIN_DEPENDS message_runtime)
@@ -46,6 +45,12 @@ catkin_package(CATKIN_DEPENDS message_runtime)
 include_directories(include ${catkin_INCLUDE_DIRS})
 
 ## Build publisher
+
 add_executable(cortex_bridge src/cortex_bridge.cpp src/cortex.cpp src/cortex_socket.cpp 								src/cortex_unpack.cpp src/m3x3.cpp src/CortexHandler.cpp src/MarkerHandler.cpp src/TransformHandler.cpp)
 target_link_libraries(cortex_bridge ${catkin_LIBRARIES})
 add_dependencies(cortex_bridge cortex_bridge_generate_messages_cpp)
+
+
+## add_executable(cortex_subscriber src/cortex_subscriber.cpp)
+## target_link_libraries(cortex_subscriber ${catkin_LIBRARIES})
+## add_dependencies(cortex_subscriber cortex_bridge_generate_messages_cpp)

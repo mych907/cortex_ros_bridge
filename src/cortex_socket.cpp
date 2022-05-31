@@ -9,10 +9,6 @@
 #include <stdio.h>
 #include <errno.h>
 
-// Added by Minyoung
-#include <algorithm>
-#include <utility>
-
 #include "cortex_socket.h"
 #include "cortex_intern.h"
 
@@ -155,59 +151,6 @@ SOCKET Socket_CreateForBroadcasting(unsigned long IP_Address, //in network byte 
   return sockfd;
 }
 
-int ConvertToIPAddress2(const char *szNameOrAddress2, struct in_addr *Address2)
-{
-  struct hostent* haddr = NULL;
-  //    char s[256];
-
-  if (szNameOrAddress2 == NULL || szNameOrAddress2[0] == 0) {
-    Address2->s_addr = INADDR_BROADCAST;
-    return 0;
-  }
-
-  /* find Internet address of host */
-
-  if (!isalpha(szNameOrAddress2[0])) {
-    /* Convert a.b.c.d address to a usable one */
-    unsigned long addr2 = inet_addr(szNameOrAddress2);
-    haddr = gethostbyaddr((char *) &addr2, 4, AF_INET);
-    if (haddr != NULL) {
-      Address2->s_addr = addr2;
-      return 0;
-    }
-    return -1;
-  }
-
-  /* server address is a name */
-  haddr = gethostbyname(szNameOrAddress2);
-
-  if (haddr == NULL) {
-    return -1;
-  }
-
-  if (haddr->h_length != sizeof(in_addr)) {
-    //        LOGMESSAGE("SOCKET ERROR: address sizes don't match?!");
-    return -1;
-  }
-
-  memcpy(
-      Address2,
-      haddr->h_addr_list[0],
-      sizeof(in_addr));
-
-  return 0;
-} // Fake
-
-
-
-
-
-
-
-
-
-
-
 int ConvertToIPAddress(const char *szNameOrAddress, struct in_addr *Address)
 {
   struct hostent* haddr = NULL;
@@ -250,8 +193,6 @@ int ConvertToIPAddress(const char *szNameOrAddress, struct in_addr *Address)
 
   return 0;
 }
-
-
 
 /***********************************************************
 
@@ -440,6 +381,7 @@ int Cortex_GetAllOfMyAddresses(unsigned long Addresses[], int nMax)
     LogMessage(VL_Error, "Failed to get my addresses");
     return -1;
   }
+
   for (nAddresses = 0; nAddresses < nMax; nAddresses++) {
     if (haddr->h_addr_list[nAddresses] == NULL) {
       break;

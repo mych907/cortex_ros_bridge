@@ -4,7 +4,6 @@
 
 #include <string.h>
 #include <stdlib.h>
-#include <stdio.h>
 
 // Tagged items definitions
 #define TAG_ENCODER_ANGLES 11
@@ -14,7 +13,6 @@
 
 int Unpack_BodyDef(char **pptr, sBodyDef *BodyDef)
 {
-  printf("\nUnpacking body...\n");
   int nMarkers;
   int nSegments;
   int nDofs;
@@ -33,20 +31,17 @@ int Unpack_BodyDef(char **pptr, sBodyDef *BodyDef)
   memcpy(&nMarkers, ptr, 4);
   BodyDef->nMarkers = nMarkers;
   ptr += 4;
-  printf("nMarkers: %d\n",nMarkers);
 
   BodyDef->szMarkerNames = (char **) malloc(nMarkers * sizeof(char*));
 
   for (iMarker = 0; iMarker < nMarkers; iMarker++) {
     BodyDef->szMarkerNames[iMarker] = ptr;
     ptr += strlen(ptr) + 1;
-    printf("MarkerNames: %s\n", BodyDef->szMarkerNames[iMarker]);
   }
 
   // Segments
 
   memcpy(&nSegments, ptr, 4);
-  printf("nSegments: %d\n", nSegments);
   BodyDef->Hierarchy.nSegments = nSegments;
   ptr += 4;
 

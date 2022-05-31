@@ -21,9 +21,10 @@
 #include <tuple>
 #include "cortex.h"
 
-using namespace tf;
 
 #define piDiv180 0.01745329251
+
+using namespace tf;
 
 std::tuple<bool, StampedTransform> CreateTransform ( sFrameOfData* FrameOfData, int frame_index, const char* body, float* origin_offset )
 {
@@ -36,26 +37,28 @@ std::tuple<bool, StampedTransform> CreateTransform ( sFrameOfData* FrameOfData, 
 	tSegmentData* Segments = FrameOfData->BodyData[frame_index].Segments;
 	numSegments = FrameOfData->BodyData[frame_index].nSegments;
 
+
 	if ( Segments != NULL )
 	{
 		// Publish the central marker and data for each segment
 		for ( int i = 0; i < numSegments; ++i )
 		{
 			// get body data
-			pos_x = 0.001*(double)Segments[i][0]; // x
-			pos_y = 0.001*(double)Segments[i][1]; // y
-			pos_z = 0.001*(double)Segments[i][2]; // z
+			pos_x = (double)Segments[i][0]; // x
+			pos_y = (double)Segments[i][1]; // y
+			pos_z = (double)Segments[i][2]; // z
+
 			roll = (piDiv180)*Segments[i][3]; // roll (in rad)
 			pitch = (piDiv180)*Segments[i][4]; // pitch (in rad)
 			yaw = (piDiv180)*Segments[i][5]; // yaw (in rad)
 
 			// assure body data is valid
-			if ( ( pos_x < -2 || pos_x > 2 ) ||        // values currently hard coded for the 
-				 ( pos_y < -1.25 || pos_y > 1.25 ) ||  // volume of the space the robot is within
-				 ( pos_z < 0 || pos_z > 1.75 ) )
-			{
-				valid_data = false;
-			}
+			//if ( ( pos_x < -2 || pos_x > 2 ) ||        // values currently hard coded for the 
+			//	 ( pos_y < -1.25 || pos_y > 1.25 ) ||  // volume of the space the robot is within
+			//	 ( pos_z < 0 || pos_z > 1.75 ) )
+			//{
+			//	valid_data = false;
+			//}
 
 			// subtract any offset for the body
 			pos_x -= origin_offset[0];
@@ -78,6 +81,9 @@ std::tuple<bool, StampedTransform> CreateTransform ( sFrameOfData* FrameOfData, 
 			return std::make_tuple ( valid_data, transform );
 		}
 	}
+    else
+    {
+    }
 	Vector3 base_trans = Vector3(0,0,0);
 	Quaternion base_quat = createQuaternionFromRPY(0,0,0);
 	Transform badTransform = Transform(base_quat, base_trans);
