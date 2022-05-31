@@ -24,10 +24,14 @@
 #include <tf/transform_broadcaster.h>
 #include "cortex.h"
 
+// MY
+#include "geometry_msgs/PoseStamped.h"
+
 // marker headers
 #include "MarkerHandler.h"
 #include "TransformHandler.h"
 #include "CortexHandler.h"
+#include "PoseStampedHandler.h"
 
 #include "cortex_bridge/Markers.h"
 #include <visualization_msgs/MarkerArray.h>
@@ -40,31 +44,45 @@
 #include <sstream>
 #include <time.h>
 
-// Added by Minyoung
-#include <algorithm>
-#include <utility>
-#include <string>
-
-// toggle this define to publish "cortex_bridge/Markers" instead of viz markers
-#define PUBLISH_VISUALIZATION_MARKERS 0
 
 // Globals
 tf::TransformBroadcaster *Cortex_broadcaster;
-ros::Publisher Cortex_markers;
 
 char** bodyOfInterest = NULL;
 int NumBodiesOfInterest = 0;
 float** bodyOriginOffset = NULL; // X, Y, Z, aX, aY, aZ W
 
+ros::Publisher Cortex_markers;
+ros::Publisher MoCapGPS;
 ros::Time glob;
+
+
 
 // call backs
 bool setOriginCallback ( cortex_bridge::cortexSetOrigin::Request& req, cortex_bridge::cortexSetOrigin::Response& resp );
-void newFrameCallback ( sFrameOfData* FrameOfData );
+
+
+/////////////////////////////////////////////////////////////////////////////////
+/////////////////////////// NEW FRAME CALLBACK ///////////////////////////////
+/////////////////////////////////////////////////////////////////////////////////
+void newFrameCallback(sFrameOfData* FrameOfData)
+{
+	// publish markers
+	cortex_bridge::Markers marker_array;
+	marker_array = CreateMarkerArray_novis ( FrameOfData );
+	Cortex_markers.publish(marker_array);
+
+	// free data frame memory
+	Cortex_FreeFrame ( FrameOfData );
+}
+
+
+
 
 // main driver
 int main(int argc, char* argv[])
 {
+
 	// initialize ros / variables
 	ros::init(argc, argv, "cortex_bridge");
 	ros::NodeHandle nh;
@@ -79,12 +97,8 @@ int main(int argc, char* argv[])
 	if ( !param_nh.getParam("cortex_ip", cortexIP) )
 		ROS_ERROR ("Could not find IP of cortex machine in launch file.");
 
-	// publisher for markers
-#ifdef PUBLISH_VISUALIZATION_MARKERS
-	Cortex_markers = nh.advertise<visualization_msgs::MarkerArray>("vis_markers", 1000);
-#else
 	Cortex_markers = nh.advertise<cortex_bridge::Markers>("novis_markers", 1000);
-#endif
+        MoCapGPS = nh.advertise<geometry_msgs::PoseStamped>("/mavros/vision_pose/pose", 1000);
 
 	// broadcaster for transforms
 	Cortex_broadcaster = new tf::TransformBroadcaster();
@@ -93,18 +107,19 @@ int main(int argc, char* argv[])
 	service = nh.advertiseService("cortexSetOrigin", setOriginCallback);
 
 	// set loop rate
-	ros::Rate loop_rate(150);	
-
+	// ros::Rate loop_rate(60); //150
+	
 	// Initialize cortex connection
-	if ( InitializeCortexConnection ( myIP.c_str(), cortexIP.c_str() ) != 0 ) // Originial
+	if ( InitializeCortexConnection ( myIP.c_str(), cortexIP.c_str() ) != 0 )
 	{
 		ROS_INFO ( "Error: Unable to initialize ethernet communication" );
 		return -1;
 	}
 
 	// get all the possible bodies to track
-	NumBodiesOfInterest = GetKnownBodies ( bodyOfInterest );
-        printf("\nNumBodies : %i\n\n", NumBodiesOfInterest);
+	NumBodiesOfInterest = GetKnownBodies ( bodyOfInterest );	
+	ROS_INFO("Num Bodies Of Interest = %d", NumBodiesOfInterest);
+
 	if ( NumBodiesOfInterest < 0 )
 	{
 		// clean up cortex connection
@@ -122,15 +137,58 @@ int main(int argc, char* argv[])
 			bodyOriginOffset[i][j] = 0.0;
 	}
 
+	
+	sFrameOfData* getCurrentFrame;
+
+	getCurrentFrame =  Cortex_GetCurrentFrame();  // Can POLL for the current frame.
+
+	// ROS_INFO("number of markers defined in bodyTable: %d",getCurrentFrame->BodyData[0].nMarkers);
+	// ROS_INFO("number of markers defined in bodyWand: %d",getCurrentFrame->BodyData[1].nMarkers);
+
 	// get cortex frame rate information
 	GetCortexFrameRate();
 
 	// set callbacks and handlers
 	InitializeCortexHandlers();
-	Cortex_SetDataHandlerFunc(newFrameCallback);
 
-	// call callbacks while ros::ok == true
-	ros::spin();
+	void *pResponse;
+	int nBytes;
+	ROS_INFO("*** Starting live mode ***\n");
+	Cortex_Request("LiveMode", &pResponse, &nBytes);
+
+	int count = 0;
+
+
+        int fIndex;
+        std::tuple<bool,tf::StampedTransform> transform;
+
+
+	ros::Rate rt(200);
+	while(ros::ok())
+	{
+		auto getCurFrame = Cortex_GetCurrentFrame();
+
+                for ( int i = 0; i < NumBodiesOfInterest; ++i )
+                {
+                    fIndex = FindBodyFrameIndex ( getCurFrame, bodyOfInterest[i] );
+                    transform = CreateTransform( getCurFrame, fIndex, bodyOfInterest[i], bodyOriginOffset[i] );
+                    Cortex_broadcaster->sendTransform ( std::get<1>(transform) );
+
+
+                    // publish MoCap GPS
+                    geometry_msgs::PoseStamped MoCapGPS_data;
+                    MoCapGPS_data = CreatePoseStamped ( getCurFrame, fIndex, bodyOfInterest[i], bodyOriginOffset[i] );
+                    MoCapGPS.publish(MoCapGPS_data);
+                }
+
+		newFrameCallback(getCurFrame);
+
+		ros::spinOnce(); // or ros::spin() w/o above while(ros::ok())
+
+		rt.sleep();
+		++count;
+	}
+
 
 	// clean up cortex connection
 	ROS_INFO ("Cortex_Exit");
@@ -141,12 +199,15 @@ int main(int argc, char* argv[])
 	{
 		delete bodyOfInterest[i];
 		delete bodyOriginOffset[i];
+		ROS_WARN("deleting body Interest 1");
 	}
 	delete bodyOfInterest;
 	delete bodyOriginOffset;
-
+	ROS_WARN("deleting body Interest 2");
 	return 0;
 }
+
+
 
 /////////////////////////////////////////////////////////////////////////////////
 /////////////////////////// ORIGIN SRV CALLBACK ///////////////////////////////
@@ -224,52 +285,3 @@ bool setOriginCallback ( cortex_bridge::cortexSetOrigin::Request& req, cortex_br
 	ROS_INFO ( "Response to set origin call sent." );
 	return resp.success;
 }
-
-/////////////////////////////////////////////////////////////////////////////////
-/////////////////////////// NEW FRAME CALLBACK ///////////////////////////////
-/////////////////////////////////////////////////////////////////////////////////
-void newFrameCallback(sFrameOfData* FrameOfData)
-{
-        printf("Callback!\n");
-	// publish body transforms for all interesting bodies
-	std::tuple<bool,tf::StampedTransform> transform;
-	int fIndex;
-        printf("NumBodiesOfInterest is %d\n", NumBodiesOfInterest);
-	for ( int i = 0; i < NumBodiesOfInterest; ++i )
-	{
-		fIndex = FindBodyFrameIndex ( FrameOfData, bodyOfInterest[i] );
-		if ( fIndex >= 0 )
-		{
-			transform = CreateTransform ( FrameOfData, fIndex, bodyOfInterest[i], bodyOriginOffset[i] );
-			// Only publish if we got valid data
-			if ( std::get<0>(transform) )
-			{
-				Cortex_broadcaster->sendTransform ( std::get<1>(transform) );
-
-				// send delay info
-				ros::Time cur = ros::Time::now();
-				ROS_INFO ( "frame delay - %f seconds", (cur - glob).toSec());
-				glob = cur;
-			}
-			else
-				ROS_WARN ( "Received out of range data." );
-		}
-		else
-			ROS_WARN ( "Body %s not found in frame %i", bodyOfInterest[i], FrameOfData->iFrame );
-	}
-
-	// publish markers
-#ifdef PUBLISH_VISUALIZATION_MARKERS
-	visualization_msgs::MarkerArray marker_array;
-	marker_array = CreateMarkerArray_vis ( FrameOfData );
-	Cortex_markers.publish(marker_array);
-#else
-	cortex_bridge::Markers marker_array;
-	marker_array = CreateMarkerArray_novis ( FrameOfData );
-	Cortex_markers.publish(marker_array);
-#endif
-
-	// free data frame memory
-	Cortex_FreeFrame ( FrameOfData );
-}
-

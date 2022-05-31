@@ -23,6 +23,4 @@
 #include "cortex_bridge/Marker.h"
 #include "geometry_msgs/PoseStamped.h"
 
-visualization_msgs::MarkerArray CreateMarkerArray_vis ( sFrameOfData* FrameOfData );
-cortex_bridge::Markers CreateMarkerArray_novis ( sFrameOfData* FrameOfData );
 geometry_msgs::PoseStamped CreatePoseStamped ( sFrameOfData* FrameOfData, int frame_index, const char* body, float* origin_offset );

@@ -18,7 +18,6 @@ SOCKET Socket_CreateForBroadcasting(unsigned long IP_Address,
                                     unsigned short uPort);
 
 int ConvertToIPAddress(const char *szNameOrAddress, struct in_addr *Address);
-int ConvertToIPAddress2(const char *szNameOrAddress2, struct in_addr *Address2);
 
 int Broadcast(SOCKET sockfd, unsigned short uPort, const char *Buffer, int nBytes);
 
